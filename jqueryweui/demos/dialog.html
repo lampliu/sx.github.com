@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>jQuery WeUI</title>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+<meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.
+">
+
+<link rel="stylesheet" href="../lib/weui.min.css">
+<link rel="stylesheet" href="../css/jquery-weui.css">
+
+
+  </head>
+
+  <body ontouchstart>
+
+
+    <header class='demos-header'>
+      <h1 class="demos-title">对话框</h1>
+    </header>
+
+    <div class='demos-content-padded'>
+
+      <a href="javascript:;" id='show-custom' class="weui-btn weui-btn_primary">显示自定义对话框</a>
+    </div>
+    <script src="../lib/jquery-2.1.4.js"></script>
+<script src="../lib/fastclick.js"></script>
+
+<script src="../js/jquery-weui.js"></script>
+
+    <script>
+    
+         $(document).ready(function(){
+        $.modal({
+          title: "Hello",
+          text: "我是自定义的modal",
+          buttons: [
+            { text: "支付宝", onClick: function(){ $.alert("你选择了支付宝"); } },
+            { text: "微信支付", onClick: function(){ $.alert("你选择了微信支付"); } },
+            { text: "取消", className: "default"},
+          ]
+        });
+      });
+
+    </script>
+  </body>
+</html>
