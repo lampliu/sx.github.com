@@ -1,0 +1,60 @@
+用过PHP才知道，原来对于Excel文件的写入和读取原来可以这么简单！ 
+利用php实现对于Excel的读取，主要借助于PHPExcel插件来完成。 
+PHPExcel下载地址：PHPExcel下载 
+一、PHPExcel实现写入excel操作步骤 
+首先需要引入类文件，引入PHPExcel.php文件。 
+1、新建一个Excel表格（实例化PHPExcel类） 
+2、创建sheet（内置表） （createSheet()方法、setActiveSheet()方法、getActiveSheet()方法） 
+3、填充数据（setCellValue()方法） 
+4、保存文件（PHPExcel_IOFactory::createWriter()方法、save方法）
+
+二、PHPExcel实现读取Excel操作步骤 
+首先需要引入类文件，引入IOFactory.php文件。 
+1、实例化Excel读取对象 
+2、加载Excel文件（全部加载 、选择加载） 
+3、读取Excel文件（全部读取、逐行读取）
+
+利用PHPExcel实现Excel文件的写入和读取代码：
+
+<?php
+ $dir = dirname(__FILE__);  //找出当前脚本所在路径
+ /*require $dir.'\lib\PHPExcel_1.8.0_doc\Classes\PHPExcel.php'; //添加读取excel所需的类文件
+
+ $objPHPExcel = new PHPExcel();                     //实例化一个PHPExcel()对象
+ $objSheet = $objPHPExcel->getActiveSheet();        //选取当前的sheet对象
+ $objSheet->setTitle('helen');                      //对当前sheet对象命名
+ //常规方式：利用setCellValue()填充数据
+ $objSheet->setCellValue("A1","张三")->setCellValue("B1","李四");   //利用setCellValues()填充数据
+ //取巧模式：利用fromArray()填充数据
+ $array = array(
+     array("","B1","张三"),
+     array("","B2","李四")
+ );
+ $objSheet->fromArray($array);  //利用fromArray()直接一次性填充数据
+ $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel,'Excel2007');   //设定写入excel的类型
+ $objWriter->save($dir.'/test.xlsx');*/       //保存文件
+
+ //利用php读取excel数据
+ require $dir.'\lib\PHPExcel_1.8.0_doc\Classes\PHPExcel\IOFactory.php';
+
+ $filename = $dir.'\test.xlsx';
+ $objPHPExcelReader = PHPExcel_IOFactory::load($filename);  //加载excel文件
+
+ foreach($objPHPExcelReader->getWorksheetIterator() as $sheet)  //循环读取sheet
+ {
+     foreach($sheet->getRowIterator() as $row)  //逐行处理
+     {
+         if($row->getRowIndex()<2)  //确定从哪一行开始读取
+         {
+             continue;
+         }
+         foreach($row->getCellIterator() as $cell)  //逐列读取
+         {
+             $data = $cell->getValue(); //获取cell中数据
+             echo $data;
+         }
+         echo '<br/>';
+     }
+ }
+
+?>
