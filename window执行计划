@@ -3,5 +3,5 @@
 @echo off 
 start http://www.tiangui.com/index.php?s=/admin/task/crontab   //访问项目路径
 ping -n 5 127.1 >nul 5>nul 
-taskkill /f /im IEXPLORE.exe 
+taskkill /f /im IEXPLORE.exe  //执行计划关闭浏览器
 exit
