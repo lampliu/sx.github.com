@@ -1,0 +1,7 @@
+
+//window 首先建一个bat文件
+@echo off 
+start http://www.tiangui.com/index.php?s=/admin/task/crontab   //访问项目路径
+ping -n 5 127.1 >nul 5>nul 
+taskkill /f /im IEXPLORE.exe 
+exit
