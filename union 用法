@@ -1,0 +1,57 @@
+    /**
+     * 约课信息
+     */
+    public function classList(){
+        $param=$this->request->param();
+        $pagesize=empty($param["pagesize"])?6:$param["pagesize"];
+        $page=empty($param["page"])?1:$param["page"];
+
+        $Make_appointmentModel=new Make_appointmentModel();
+        $coach_id=Db::name("coach")->where('user_id',$this->userId)->value("coach_id");
+        //更新未读约课信息
+
+        $make_lsit=$Make_appointmentModel->where(['coach_id'=>$coach_id,'is_read'=>0])->select();
+        foreach($make_lsit as $mk=>$mv){
+            $Make_appointmentModel->where('id',$mv['id'])->update(['is_read'=>1]);
+        }
+
+        $where=[];
+        if(empty($param['status'])){
+            $where['status']=0;
+        }elseif($param['status']==1 || $param['status']==2){
+            $where['status']=array('gt',0);
+        }
+
+        //条件
+        $where['coach_id']=$coach_id;
+        $where['type']=1;
+        //sql 语句
+        $subQuery = $Make_appointmentModel->group('product_id')->where($where)->buildSql();
+        $where_dt="type<>1 and coach_id=".$coach_id;
+        $sql="(SELECT * FROM `ztjs_make_appointment` where $where_dt)";
+
+        $sql.=" union all ($subQuery)";
+        //分页
+        if ($page < 1) $page = 1;
+        $startnum = ($page - 1) * $pagesize;
+        $total="select count(id) as count from (".$sql.") e";
+        $list_count=Db::query($total);
+
+        $totalnum=$list_count[0]['count'];
+        $totalpage = ceil($totalnum / $pagesize);
+
+        $totalnum_sql="select * from (".$sql.") e  order by add_time desc limit {$startnum},{$pagesize}";
+        $list=Db::query($totalnum_sql);
+
+
+//        $where['coach_id']=$coach_id;
+//        $where['type']=2;//0体验课，1团课，2其他',
+//
+//        $list=$Make_appointmentModel->make_list($where,$pagesize,$page);
+        $data=[
+            'm_list'=>$list,
+            'totalpage'=>$totalpage
+        ];
+
+        $this->success('请求成功!', $data);
+    }
