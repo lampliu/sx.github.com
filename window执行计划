@@ -8,4 +8,4 @@ taskkill /f /im IEXPLORE.exe  //执行计划关闭浏览器
 exit
 
 //第二种 php访问
-d:\HwsApacheMaster\php\php56\php.exe  D:\wwwroot\zhongtian_MJgT1u\public\api\index.php home/timedtask/Task
+d:\HwsApacheMaster\php\php56\php.exe  D:\wwwroot\项目\public\api\index.php home/timedtask/Task
