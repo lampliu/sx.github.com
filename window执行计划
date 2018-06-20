@@ -1,7 +1,11 @@
 
 //window 首先建一个bat文件
+第一种 打开浏览器访问
 @echo off 
 start http://www.tiangui.com/index.php?s=/admin/task/crontab   //访问项目路径
 ping -n 5 127.1 >nul 5>nul 
 taskkill /f /im IEXPLORE.exe  //执行计划关闭浏览器
 exit
+
+//第二种 php访问
+d:\HwsApacheMaster\php\php56\php.exe  D:\wwwroot\zhongtian_MJgT1u\public\api\index.php home/timedtask/Task
