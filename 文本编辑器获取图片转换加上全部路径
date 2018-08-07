@@ -1,0 +1,11 @@
+    $str=stripslashes($info['course_description']);
+    $info['course_description']=htmlspecialchars_decode($str);
+    $info['course_description']=$this->replacePicUrl($info['course_description']);
+
+//替换图片
+function replacePicUrl($content = null) {
+        $strUrl="http://".$_SERVER['SERVER_NAME']."/";//获取域名
+        $content = preg_replace('/(<img.+?src="\/)(.*?)/','$1'.$strUrl.'$2', $content);
+        $content=str_replace('/http:','http:', $content);
+        return $content;
+    }
