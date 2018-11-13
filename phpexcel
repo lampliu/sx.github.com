@@ -47,7 +47,7 @@
         }
         $table .= "</tbody>
         </table>";
-//通过header头控制输出excel表格
+	//通过header头控制输出excel表格
         header("Pragma: public");
         header("Expires: 0");
         header("Cache-Control:must-revalidate, post-check=0, pre-check=0");
@@ -68,7 +68,7 @@
         set_time_limit(0);
         //实例化
         $phpexcel = new \PHPExcel();
-//设置比标题
+	//设置比标题
         $phpexcel->getActiveSheet()->setTitle('中奖列表');
 
         //设置表头
@@ -82,7 +82,7 @@
             ->setCellValue('G1','领取时间')
             ->setCellValue('H1','操作');
 
-//从数据库取得需要导出的数据
+	//从数据库取得需要导出的数据
         $lid = input('lid');
 
         $where['lottery_id']=$lid;
@@ -101,7 +101,7 @@
                 $list[$k]["draw_name"]="确认领取";
             }
         }
-//用foreach从第二行开始写数据，因为第一行是表头
+	//用foreach从第二行开始写数据，因为第一行是表头
         $i=2;
 
         foreach($list as $v){
@@ -120,7 +120,7 @@
         $obj_Writer = \PHPExcel_IOFactory::createWriter($phpexcel,'Excel5');
         $filename ='Export'. date('Y-m-d').".xls";//文件名
 
-//设置header
+	//设置header
         header("Content-Type: application/force-download");
         header("Content-Type: application/octet-stream");
         header("Content-Type: application/download");
@@ -131,4 +131,70 @@
         header("Pragma: no-cache");
         $obj_Writer->save('php://output');//输出
         die();//种植执行
+	
     }
+    
+    
+    //第三种 导出数据快
+    public function daochuexcel(){
+    	
+        set_time_limit(0);
+        // 输出Excel文件头，可把user.csv换成你要的文件名
+        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment;filename="中奖名单.csv"');
+        header('Cache-Control: max-age=0');
+
+        $lid = input('lid');
+
+        $where['l.lottery_id']=$lid;
+
+
+        $list = Db::name('lottery_user')->alias("l")
+            ->join("member m","l.user_id=m.uid")
+            ->where($where)
+            ->order("l.id desc")
+            ->field("l.id,m.nickname,l.prize_title,l.name,l.phone,l.prize_time,l.draw_time")
+            ->select();
+
+
+        $fp = fopen('php://output', 'a');
+        // 输出Excel列名信息
+        $head = array('ID', '中奖会员', '奖项', '姓名','电话','中奖时间','领取时间','操作');
+        foreach ($head as $i => $v) {
+            // CSV的Excel支持GBK编码，一定要转换，否则乱码
+            $head[$i] = iconv('utf-8', 'gb2312', $v);
+        }
+
+        // 将数据通过fputcsv写到文件句柄
+        fputcsv($fp, $head);
+
+        // 计数器
+        $cnt = 0;
+        // 每隔$limit行，刷新一下输出buffer，不要太大，也不要太小
+        $limit = 100000;
+
+        // 逐行取出数据，不浪费内存
+        foreach($list as $ke=>$va){
+            $cnt ++;
+            if ($limit == $cnt) { //刷新一下输出buffer，防止由于数据过多造成问题
+                ob_flush();
+                flush();
+                $cnt = 0;
+            }
+
+            $va["prize_time"]=date("Y-m-d H:i:s",$va["prize_time"]);
+            $va["draw_time"]=date("Y-m-d H:i:s",$va["draw_time"]);
+            if($va['draw_time']){
+                $va["draw_name"]="已领取";
+            }else{
+                $va["draw_name"]="确认领取";
+            }
+
+            foreach ($va as $i => $v) {
+                $va[$i] = iconv('utf-8', "GB2312//IGNORE", $v);
+            }
+
+            fputcsv($fp, $va);
+        }
+    
+    }	
