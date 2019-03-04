@@ -1,0 +1,8 @@
+<script>
+	$('[name=name]').on('click',function(){
+	    var val = $(this).val();
+        $('[name=manager_id]',parent.document.body).val(val);
+        $('[name=manager_name]',parent.document.body).val(val);
+        window.parent.closeAll();
+	});
+</script>

@@ -1,0 +1,440 @@
+<?php
+
+
+ public function getList()
+    {
+        $pay_status = input('pay_status', -1);//所有 0未支付，1已支付,2退款中，3已退款
+        $status = input('status', -1);//拼团状态 0拼团中 1拼团成功 2取消订单
+        $comment_status = input('comment_status', -1);//评论状态
+        $wuliu_status = input('wuliu_status');// 0待发货，1已发货,2已签收
+        $pagesize = input('pagesize', 10);
+        $page = input('page', 1);
+        if (!$this->loginuid) {
+            return $this->formatReturn(Error::getMessage(Error::LOGIN_EXPRISE), Error::LOGIN_EXPRISE);
+        }
+        if ($page < 1) $page = 1;
+        $startnum = ($page - 1) * $pagesize;
+        $where['uid'] = $this->loginuid;
+        if ($status != -1) {//拼团状态
+            $where['status'] = $status;
+        }
+        if ($pay_status != -1) {//支付
+            if($status==2){
+                //$where['pay_status'] = ['>','1'];
+                $where['pay_status'] = 0;
+            }elseif($status==3){
+                $where['pay_status'] = ['>','1'];
+            }
+            else{
+                $where['pay_status'] = $pay_status;
+            }
+
+
+        }
+        if ($comment_status != -1) {//评论
+            $where['comment_status'] = $comment_status;
+        }
+        if(!empty($wuliu_status)){
+            if ($wuliu_status == 1) {//待发货
+                $where['wuliu_status'] = ['in','0,1,2'];
+            }else{
+                $where['wuliu_status'] = $wuliu_status;
+            }
+
+        }
+        $totalnum = Db::name("order_product")
+            ->where($where)->count();
+        $totalpage = ceil($totalnum / $pagesize);
+        $orderlist = Db::name("order_product")
+            ->alias("ordp")
+            ->where($where)
+            ->where('detele_static','<>',1)
+            ->order("create_time desc")
+            ->limit($startnum, $pagesize)
+            ->fetchSql(false)
+            ->select();
+        $refund_time=config('tuihuotime');
+        $refund_time=$refund_time*60;
+        foreach ($orderlist as $k=>$v){
+            if($v['product_tumbpic']){
+                $orderlist[$k]['product_tumbpic'] = get_cover($v['product_tumbpic'], 'url');//自动转换
+            }
+
+            if(empty($v['endtime'])){
+                $orderlist[$k]['if_refund']=1;
+            }else{
+                if(($v['endtime']+$refund_time)>time()){
+                    $orderlist[$k]['if_refund']=1;
+                }else{
+                    $orderlist[$k]['if_refund']=0;
+                }
+            }
+        }
+
+        foreach ($orderlist as $k => $v) {
+            $orderlist[$k]['pay_amount'] = $orderlist[$k]['pay_amount'] / 100;
+            $orderlist[$k]['market_price'] = $orderlist[$k]['market_price'] / 100;
+            $orderlist[$k]['shop_mobile'] = Db::name('shop')->where('id',$v['shop_id'])->field('mobile')->find()['mobile'];
+            $order_id_array[] = $v["id"];
+        }
+
+
+
+        if (!empty($orderlist)) {
+            $map['order_id']=array('in',$order_id_array);
+            $order_info = Db::name('order_product_info')
+                ->where($map)
+                ->select();
+
+            foreach ($order_info as $key => $val) {
+                $order_info[$key]['product_tumbpic'] = get_cover($val['product_tumbpic'], 'url');//自动转换
+            }
+
+            foreach ($orderlist as $k => $v) {
+                $orderlist[$k]['create_time']=date('Y-m-d H:i:s',$v['create_time']);
+                foreach ($order_info as $key => $val) {
+                    if ($val['order_id'] == $v['id']) {
+                        $orderlist[$k]['order_info'][] = $val;
+                    }
+                }
+            }
+
+            foreach ($orderlist as $key=> $value){
+                $string='';
+                if(!empty($value['order_info'])){
+                    foreach ($value['order_info'] as $k => $v){
+                        $string.=$v['product_id'].',';
+                    }
+                }
+                $string=rtrim($string,',');
+                $orderlist[$key]['product_id']=$string;
+            }
+        }
+
+        $ordermod = new \app\common\model\Order();
+        foreach ($orderlist as &$val) {
+            $val['shop_logo_url'] = get_cover($val['shop_logo'], 'url');
+            $val['tiptxt'] = $ordermod->getPayStatustext($val);
+        }
+        $result = [
+            'totalpage' => $totalpage,
+            'list' => $orderlist,
+        ];
+        if(empty($orderlist)){
+            return $this->formatReturn(Error::getMessage(Error::Error), Error::Error, '订单获取失败');
+        }else{
+            return $this->formatReturn(Error::getMessage(Error::SUCCESS), Error::SUCCESS, $result);
+        }
+
+    }
+
+
+
+
+?>
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{:config('web_site_title')}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    {include file="public/commonjscss"}
+    <link rel="stylesheet" href="__PUBLIC__/mobile/css/orderitem.css">
+    <link rel="stylesheet" href="__PUBLIC__/mobile/css/main.css">
+    <style>
+        .aui-tab-item.aui-active {
+            color: #e02e24;
+            border-bottom: 2px solid #e02e24;
+        }
+
+        .aui-tab-item {
+            border-bottom: solid 1px #eeeeee;
+        }
+
+        .aui-margin-b-5 {
+            margin-bottom: 4rem !important;
+        }
+
+        p {
+            font-size: 0.5rem;
+            color: #757575;
+        }
+    </style>
+</head>
+<body>
+<div class="top">
+    <div class="left">
+        <a href="javascript:history.go(-1)" class="fh"><img src="__PUBLIC__/mobile/image/fh.png"></a>
+    </div>
+    <div class="center">{$title}</div>
+</div>
+
+<div class="aui-content" id="order-box">
+    <div class="aui-tab">
+        <div class="aui-tab-item {if $status=='all'} aui-active{/if}" @click="goorder('all')">全部</div>
+        <div class="aui-tab-item {if $status=='wait_pay'}aui-active{/if}" @click="goorder('wait_pay')">待付款</div>
+        <div class="aui-tab-item {if $status=='wait_send'}aui-active{/if}" @click="goorder('wait_send')">待发货</div>
+        <div class="aui-tab-item {if $status=='wait_recv'}aui-active{/if}" @click="goorder('wait_recv')">待收货</div>
+        <div class="aui-tab-item {if $status=='wait_pin'}aui-active{/if}" @click="goorder('wait_pin')">待评价</div>
+    </div>
+
+    <div class="orderlist aui-margin-b-5">
+        <!--orderitem start-->
+        <div class="order-item" v-for="item in orders" @click="godetail(item)" style="margin-bottom:0.5rem">
+            <div class="shop-item bg-white">
+                <div class="shop-title">
+                    <span>下单时间:{{item.create_time}}</span>
+                </div>
+                <div class="orderstatus">{{item.tiptxt}}</div>
+            </div>
+
+            <div v-if="item.buymod ==='gouwuche'">
+                <div class="product" v-for="info in item.order_info">
+                    <div class="product-logo-title">
+                        <img :src="info.product_tumbpic" class="product-logo">
+                        <div class="product-title">
+                            <div class="product-titled">{{info.product_title}}</div>
+                            <p>{{info.product_sku}}</p>
+                        </div>
+                    </div>
+
+                    <div class="price-and-num">
+                        <div class="product-price">￥{{info.product_price/100}}</div>
+                        <div class="product-num">x{{info.num}}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product" v-else-if="item.buymod==='directbuy'">
+                <div class="product-logo-title">
+                    <img :src="item.product_tumbpic" class="product-logo">
+                    <div class="product-title">
+                        <div class="product-titled">{{item.product_title}}</div>
+                        <p>{{item.product_sku}}</p>
+                    </div>
+                </div>
+
+                <div class="price-and-num">
+                    <div class="product-price">￥{{item.product_price/100}}</div>
+                    <div class="product-num">x{{item.product_num}}</div>
+                </div>
+            </div>
+
+
+            <div class=" pay-info bg-white">
+                <span style="padding-left: 0.5rem;">订单号:{{item.orderno}}</span>
+                <span style="float:right" class="">实付: ￥{{item.pay_amount}}</span>
+            </div>
+
+            <div class="productbtn bg-white">
+                <div>
+                    <span class="orderbtn">订单详情</span>
+                    <span v-if="item.pay_status>0 && item.status==1 && item.wuliu_status==1" @click="checksign(item)">等待签收</span>
+                    <span v-if="item.pay_status>0 && item.status==1" @click="gocomment(item)">{{commentmap[item.comment_status]}}</span>
+                </div>
+                <!--<div v-else><span class="paybtn">立即支付</span></div>-->
+            </div>
+        </div>
+    </div>
+</div>
+{include file="public/footer"}
+
+<script>
+
+    var vm = new Vue({
+        el: "#order-box",
+        data: {
+            page:1,
+            totalpage:1,
+            retback:true,
+            orders:[],
+            status:'{$status}',
+            commentmap:{
+                0:'未评论',
+                1:'已评论',
+            }
+        },
+        mounted: function () {
+            //添加滚动条事件 第一方法
+            var _this = this;
+            window.onscroll = function () {
+                _this.lazyLoad();
+            }
+            //添加滚动条事件 第二方法
+//            window.addEventListener('scroll',this.lazyLoad,true);
+        },
+        methods: {
+            checksign: function (item) {
+                console.log(item);
+                //签收货物
+                if (item.wuliu_status < 2) {
+                    $page.get_data('/api/order/checksign', 'post', {
+                        orderid: item.id,
+                        token: '{$token}'
+                    }, function (ret) {
+                        for (var i in vm.orders) {
+                            vm.orders[i].wuliu_status = 2;
+                        }
+                    });
+                }
+            },
+            gocomment: function (item) {
+                if (!item.comment_status) {
+                    $page.go('/mobile/product/addcomment?orderid=' + item.id + "&product_id=" + item.product_id);
+                }
+
+            },
+            godetail: function (item) {
+                $page.go("/mobile/home/orderdetail?id=" + item.id);
+            },
+            getstatus: function (item) {
+                var rettxt = '';
+                if (item.pay_status == 0) {
+                    rettxt = '等待支付';
+                } else if (item.pay_status == 1 && item.status == 0) {
+                    rettxt = "支付成功，等待成团";
+                } else if (item.pay_status > 1 && item.status == 2) {
+                    rettxt = '拼单失败，已退款';
+                } else if (item.status == 1) {
+                    rettxt = '拼单成功!';
+                }
+                return rettxt;
+            },
+            goorder: function (flag) {
+                $page.go('/mobile/home/order?status=' + flag);
+            },
+            godeail: function (item) {
+                $page.go('/mobile/home/orderdetail?id=' + item.id);
+            },
+            goluck: function (item) {
+                $page.go('/mobile/product/luckuser?id=' + item.id);
+            },
+            getorderlist: function () {
+                if (vm.page > vm.totalpage || !vm.retback) {
+                    return;
+                }
+                vm.retback = false;
+
+                var param = {'token': '{$token}'};
+                if (this.status == 'wait_pay') {
+                    param = {
+                        'pay_status': 0,
+                        'token': '{$token}'
+                    };
+                } else if (this.status == 'wait_pin') {
+                    param = {
+                        'pay_status': 1,
+                        'status': 0,
+                        'token': '{$token}'
+                    };
+                } else if (this.status == 'wait_send') {
+                    param = {
+                        'pay_status': 1,
+                        'status': 1,
+                        'wuliu_status': 0,
+                        'token': '{$token}'
+                    };
+                } else if (this.status == 'wait_recv') {
+                    param = {
+                        'pay_status': 1,
+                        'status': 1,
+                        'wuliu_status': 1,
+                        'token': '{$token}'
+                    };
+                }
+
+                //ajax请求地址
+                $page.get_data('/api/order/getList', 'post', param, function (ret) {
+                    vm.totalpage = ret.data.totalpage;
+                    vm.page = vm.page + 1;
+                    vm.retback = true;
+                    if (ret.errno == 1000) {
+                        ret.data.list.forEach(function (el) {
+                            vm.orders.push(el);
+                        });
+                    } else {
+                        $page.toast(ret.errmsg);
+                    }
+                });
+            },
+                lazyLoad: function () {
+                //获取滚动条高度 判断浏览器兼容问题
+                var sT = document.body.scrollTop || document.documentElement.scrollTop;
+                //document.body.clientHeight获取屏幕高度
+                var pT =  document.body.clientHeight;
+                //获取总共滚动高度document.body.scrollHeight
+                if (sT + pT >= document.body.scrollHeight) {
+
+                        var page=vm.page++;
+                        var param = {'token': '{$token}','page':page};
+                        if (this.status == 'wait_pay') {
+                            param = {
+                                'pay_status': 0,
+                                'token': '{$token}',
+                                'page':page
+                            };
+                        } else if (this.status == 'wait_pin') {
+                            param = {
+                                'pay_status': 1,
+                                'status': 0,
+                                'token': '{$token}',
+                                'page':page
+                            };
+                        } else if (this.status == 'wait_send') {
+                            param = {
+                                'pay_status': 1,
+                                'status': 1,
+                                'wuliu_status': 0,
+                                'token': '{$token}',
+                                'page':page
+                            };
+                        } else if (this.status == 'wait_recv') {
+                            param = {
+                                'pay_status': 1,
+                                'status': 1,
+                                'wuliu_status': 1,
+                                'token': '{$token}',
+                                'page':page
+                            };
+                        }
+                        //page 请问次数 ，vm.totalpageq共计页数
+                        if(page<= vm.totalpage){
+                            $.ajax({
+                                type: "post",
+                                url:"/api/order/getList",
+                                data:param ,
+                                dataType :'json',
+                                success:function(ret){
+                                    if (ret.errno == 1000) {
+                                        ret.data.list.forEach(function (el) {
+                                            vm.orders.push(el);
+                                        });
+                                    } else {
+                                        $page.toast(ret.errmsg);
+                                    }
+                                }
+                            });
+                        }
+                }
+
+
+
+            }
+        }
+
+    });
+
+    vm.getorderlist();
+
+
+</script>
+</body>
+</html>

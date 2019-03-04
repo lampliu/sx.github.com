@@ -1,0 +1,38 @@
+//vue 控制连续点击事件 
+ <script language="javascript">
+
+
+        var vm =new Vue({
+            el:"#reflect",
+            data:{
+                money:"",
+                token:'{$token}',
+                value:'',
+                flag:true
+            },
+            methods: {
+                take:function(){
+                    if(this.flag){
+                        this.flag = false;//关闭
+                    $page.get_data('/api/member/redenvelopes','post',{'money':vm.value,'token':this.token},function(ret){
+                        if(ret.errno==1000){
+                            vm.money=ret.data;
+                            $page.toast("提现成功");
+                            setTimeout(function(){
+                                vm.flag = true;//开启
+                            },1000);
+                        }else{
+                            $page.toast(ret.errmsg);
+                            setTimeout(function(){
+                                vm.flag = true;//开启
+                            },1000);
+                        }
+                    });
+                    }
+
+                },
+            }
+        });
+
+        vm.load_init();
+    </script>

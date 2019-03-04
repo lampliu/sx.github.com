@@ -1,0 +1,33 @@
+      
+		 <li class="aui-list-item" style="height: 90px;">
+                    <div class="aui-list-item-inner ">
+                        <div style="width:78%;float:left">
+                            <img :src="userinfo.logo_url" class="logo" onerror="this.src='__PUBLIC__/mobile/image/login.png'">
+                        </div>
+                        <div style="width:20%;float:left;line-height: 60px;text-align: center"><span style="">编辑头像</span></div>
+                        <input type="file" name="image" id="image"  accept='image/jpg,image/jpeg,image/gif,image/png'  @change='imgUpload'>
+                        <input type="hidden" id="Logo" value="" />
+                    </div>
+
+		</li>
+		<script>
+         imgUpload:function(e){
+                var formData = new FormData();
+                formData.append('file', e.target.files[0]);
+                formData.append('type', 'test');
+                console.log( e.target.files[0]);
+                $.ajax({
+                    url : '/api/member/upload', //用于文件上传的服务器端请求地址
+                    type: 'POST',
+                    dataType: 'json',
+                    cache: false,
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success : function(res){
+
+                    }
+                });
+            },
+			
+		</script>

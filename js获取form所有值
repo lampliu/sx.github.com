@@ -1,0 +1,19 @@
+ function reg() {
+                        $.ajax({
+                            type: "post",
+                            url: U('Login/reg'),
+                            //在form表单 绑定一个id
+                            data: $("#regForm").serialize(),
+                            dataType: "json",
+                            success: function(data) {
+                                if (data.status) {
+
+                                } else {
+
+                                }
+                            },
+                            error: function() {
+
+                            }
+                        });
+                    }

@@ -1,0 +1,54 @@
+ 《！---------------TP5.07---------------------》
+ //人绑定车微信通知
+    protected function people_send(){
+        //获取本地设置 app_id,secret值 
+        $oauth_wechat=sys_config_get('think_sdk_wechat');
+        //获取tuoken值
+        $access_token =  file_get_contents('https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' .$oauth_wechat['app_key'] . '&secret=' . $oauth_wechat['app_secret']);//通过code换取网页授权access_token
+        $jsondecode = json_decode($access_token);
+        //转成数组
+        $array = get_object_vars($jsondecode);
+        $url = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=".$array['access_token'];
+        $cwx=cookie('weixin_id');
+        $oauth_user=Db::name('oauth_user')->where(array('id'=>$cwx))->find();
+        $people=Db::name('people')->where(array('weixin_id'=>$cwx))->find();
+        $chuck=Db::name('chuck')->where(array('sid'=>$people['sid']))->find();
+        $data = array(
+            'touser' => $oauth_user['openid'], // openid是发送消息的基础
+            'template_id' => 'ijjiW-8vD_LaLt2FXUO0JkoJWG5XKwfrKOilS7YQ9tY', // 模板id
+            'url' => "http://test.hujinq.com", // 点击跳转地址
+            'topcolor' => '#FF0000', // 顶部颜色
+            'data' => array(
+                'first' => array('value' => '绑定成功'),
+                'keyword1' => array('value' => $people['clname']),
+                'keyword2' => array('value' => $chuck['sname']),
+                'keyword3' => array('value' => date('Y年m月d日 H:i', time())),
+                'remark' => array('value' => '拒酒千里外 安全万里行 '),
+            )
+        );
+
+        $res=$this->curl($url,$data);
+        return $res;
+    }
+
+    //发送数据
+    protected function curl($url,$data){
+        $data=urldecode(json_encode($data));
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        // post数据
+        curl_setopt($ch, CURLOPT_POST, 1);
+        // post的变量
+        curl_setopt($ch, CURLOPT_POSTFIELDS,$data);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        //设置头部信息
+        $headers = array('Content-Type:application/json; charset=utf-8','Content-Length: '.strlen($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER,$headers);
+        //执行请求
+        $output = curl_exec($ch);
+        return $output;
+
+    }
