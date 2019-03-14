@@ -1,3 +1,4 @@
+//子集窗口
 <script>
 	$('[name=name]').on('click',function(){
 	    var val = $(this).val();
@@ -6,3 +7,11 @@
         window.parent.closeAll();
 	});
 </script>
+
+父级窗口
+    //关闭窗口
+    function closeAll() {
+        layer.closeAll();
+    }
+
+
