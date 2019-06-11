@@ -9,13 +9,17 @@
 		
 		//2 第二种方法
 		 window.parent.$("#v_id-1480").val();//获取父级值
-		
+		 
+		 //1第一种方法关闭
+		 var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+        	     parent.layer.close(index); //再执行关闭   
+			
+		 //2第二种方法关闭 配合（父级窗口）
 		window.parent.closeAll();//关闭当前窗口
 	});
 </script>
 
-父级窗口
-    //关闭窗口
+    //第二种方法使用的父级窗口 关闭窗口
     function closeAll() {
         layer.closeAll();
     }
