@@ -1,10 +1,16 @@
 //子集窗口
 <script>
 	$('[name=name]').on('click',function(){
-	    var val = $(this).val();
-        $('[name=manager_id]',parent.document.body).val(val);
-        $('[name=manager_name]',parent.document.body).val(val);
-        window.parent.closeAll();
+	    	var val = $(this).val();
+		
+		//1第一种方法		
+		$('[name=manager_id]',parent.document.body).val(val);//父级赋值
+		$('[name=manager_name]',parent.document.body).val(val);//父级赋值
+		
+		//2 第二种方法
+		 window.parent.$("#v_id-1480").val();//获取父级值
+		
+		window.parent.closeAll();//关闭当前窗口
 	});
 </script>
 
