@@ -198,3 +198,52 @@
         }
     
     }	
+    
+    //第四种
+        $xlsFileName = '会员信息_' . date('YmdHis') . '.xls';
+        $xlsTitle = "<tr style='border-style:none' ><th  colspan='7'>用户中心-VIP-1-会员信息</th ></tr>";
+        $xlsHeader = "<tr>
+               <th style = 'width:70px;' > 司机名称</th >
+               <th style = 'width:70px;' > 车辆信息</th >
+               <th style = 'width:70px;' > 最后定位</th >
+               <th style = 'width:70px;' > 定位详情</th >
+               <th style = 'width:70px;' > 创建时间</th >
+           </tr>";
+        $this->excel_export_data($all, $xlsTitle, $xlsHeader, $xlsFileName);die;
+	
+	function excel_export_data($xlsDatas, $xlsTitle, $xlsHeader, $xlsFileName) {
+
+        //定义命名空间
+        $str = '<html xmlns:v="urn:schemas-microsoft-com:vml" ';
+        $str .= 'xmlns:o="urn:schemas-microsoft-com:office:office" ';
+        $str .= 'xmlns:x="urn:schemas-microsoft-com:office:excel" ';
+        $str .= 'xmlns="http://www.w3.org/TR/REC-html40">';
+
+        //header设置
+        $str .= '<head>';
+        $str .= '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" > ';
+        $str .= '</head>';
+
+        //数据正文,可以自己设置
+        $str .= '<body>';
+        $str .= '<table border=1>' . $xlsTitle;
+        $str .= '<table border=1>' . $xlsHeader;
+        foreach ($xlsDatas as $key => $rt) {
+            $str .= "<tr>";
+            foreach ($rt as $k => $v) {
+                $str .= "<td>{$v}</td>";
+            }
+            $str .= '</tr>';
+        }
+        $str .= '</table></body></html>';
+
+        //文件下载
+        header('Content-Type: application/vnd.ms-excel; name="excel"');
+        header('Content-type: application/octet-stream');
+        header('Content-Disposition: attachment; filename=' . $xlsFileName);
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        exit($str);
+    }
+
